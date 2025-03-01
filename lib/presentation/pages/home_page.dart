@@ -216,10 +216,19 @@ class _HomePageState extends State<HomePage> {
               child: charts.PieChart(
                 _createCategoryData(categorySpending),
                 animate: true,
-                defaultRenderer: charts.ArcRendererConfig(
+                defaultRenderer: charts.ArcRendererConfig<String>(
+                  arcWidth: 60,
                   arcRendererDecorators: [
-                    charts.ArcLabelDecorator(
+                    charts.ArcLabelDecorator<String>(
                       labelPosition: charts.ArcLabelPosition.auto,
+                      insideLabelStyleSpec: charts.TextStyleSpec(
+                        fontSize: 14,
+                        color: charts.MaterialPalette.white,
+                      ),
+                      outsideLabelStyleSpec: charts.TextStyleSpec(
+                        fontSize: 14,
+                        color: charts.MaterialPalette.black,
+                      ),
                     ),
                   ],
                 ),
@@ -242,7 +251,9 @@ class _HomePageState extends State<HomePage> {
         domainFn: (CategorySpending spending, _) => spending.category,
         measureFn: (CategorySpending spending, _) => spending.amount,
         data: data,
-        labelAccessorFn: (CategorySpending spending, _) => '${spending.category}: \$${spending.amount.toStringAsFixed(2)}',
+        colorFn: (CategorySpending spending, _) => _getCategoryColor(spending.category),
+        labelAccessorFn: (CategorySpending spending, _) =>
+        '${spending.category}: \$${spending.amount.toStringAsFixed(2)}',
       )
     ];
   }
@@ -254,13 +265,31 @@ class _HomePageState extends State<HomePage> {
       child: ListTile(
         leading: Icon(Icons.category, color: Colors.blue),
         title: Text(expense.category),
-        subtitle: Text(expense.date.toString()),
-        trailing: Text(
-          '\$${expense.amount.toStringAsFixed(2)}',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        subtitle: Text('${expense.date.toString()} - \$${expense.amount.toStringAsFixed(2)}'),
+        trailing: IconButton(
+          icon: Icon(Icons.delete, color: Colors.red),
+          onPressed: () {
+            // Add logic to delete the expense
+          },
         ),
       ),
     );
+  }
+
+  // Helper method to assign colors to categories
+  charts.Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Food':
+        return charts.MaterialPalette.red.shadeDefault;
+      case 'Transport':
+        return charts.MaterialPalette.blue.shadeDefault;
+      case 'Entertainment':
+        return charts.MaterialPalette.green.shadeDefault;
+      case 'Other':
+        return charts.MaterialPalette.purple.shadeDefault;
+      default:
+        return charts.MaterialPalette.gray.shadeDefault;
+    }
   }
 }
 

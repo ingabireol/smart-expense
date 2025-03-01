@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smart_expense_tracker/core/services/locator.dart';
+import 'package:smart_expense_tracker/data/models/budget_model.dart';
 import 'package:smart_expense_tracker/data/models/expense_model.dart';
 import 'package:smart_expense_tracker/data/local_db/hive_database.dart';
 import 'package:smart_expense_tracker/data/repositories/expense_repository.dart';
 import 'package:smart_expense_tracker/presentation/pages/home_page.dart';
 import 'package:smart_expense_tracker/presentation/pages/add_expense_page.dart';
 import 'package:smart_expense_tracker/presentation/pages/budget_page.dart';
+import 'package:smart_expense_tracker/presentation/pages/onboarding_page.dart';
 import 'package:smart_expense_tracker/presentation/pages/reports_page.dart';
 import 'package:smart_expense_tracker/presentation/pages/savings_goals_page.dart';
 // import 'package:smart_expense_tracker/presentation/pages/savings_page.dart';
@@ -24,9 +26,11 @@ void main() async {
 
   // Register Hive adapters
   Hive.registerAdapter(ExpenseAdapter());
+  Hive.registerAdapter(BudgetAdapter());
 
   // Open Hive box for expenses
   await Hive.openBox<Expense>('expenses');
+  await Hive.openBox<Budget>('budget');
 
   // Set up dependency injection
   setupLocator();
@@ -77,6 +81,7 @@ class MyApp extends StatelessWidget {
         '/budget': (context) => BudgetPage(),
         '/reports': (context) => ReportsPage(),
         '/savings': (context) => SavingsGoalsPage(),
+        '/onboard': (context) => OnboardingPage(),
       },
     );
   }

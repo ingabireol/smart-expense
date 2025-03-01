@@ -1,4 +1,3 @@
-// presentation/pages/reports_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
@@ -14,31 +13,62 @@ class ReportsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Reports'),
+        backgroundColor: Colors.blue,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildCategorySpendingChart(categorySpending),
+              SizedBox(height: 20),
+              _buildMonthlySpendingChart(monthlySpending),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySpendingChart(Map<String, double> categorySpending) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 16),
             Text(
               'Category-wise Spending',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 10),
             Container(
               height: 300,
-              padding: EdgeInsets.all(16),
-              child: PieChart(_createCategoryData(categorySpending)),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Monthly Spending',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Container(
-              height: 300,
-              padding: EdgeInsets.all(16),
-              child: BarChart(_createMonthlyData(monthlySpending)),
+              child: charts.PieChart(
+                _createCategoryData(categorySpending),
+                animate: true,
+                defaultRenderer: charts.ArcRendererConfig<String>(
+                  arcWidth: 60,
+                  arcRendererDecorators: [
+                    charts.ArcLabelDecorator<String>(
+                      labelPosition: charts.ArcLabelPosition.auto,
+                      insideLabelStyleSpec: charts.TextStyleSpec(
+                        fontSize: 14,
+                        color: charts.MaterialPalette.white,
+                      ),
+                      outsideLabelStyleSpec: charts.TextStyleSpec(
+                        fontSize: 14,
+                        color: charts.MaterialPalette.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -46,75 +76,116 @@ class ReportsPage extends StatelessWidget {
     );
   }
 
-  // Create data for the pie chart
-  List<charts.Series<MapEntry<String, double>, String>> _createCategoryData(
-      Map<String, double> categorySpending) {
-    final data = categorySpending.entries.toList();
+  Widget _buildMonthlySpendingChart(Map<String, double> monthlySpending) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Monthly Spending',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 300,
+              child: charts.BarChart(
+                _createMonthlyData(monthlySpending),
+                animate: true,
+                defaultRenderer: charts.BarRendererConfig<String>(
+                  cornerStrategy: const charts.ConstCornerStrategy(30),
+                ),
+                domainAxis: const charts.OrdinalAxisSpec(
+                  renderSpec: charts.SmallTickRendererSpec(
+                    labelRotation: 60,
+                    labelStyle: charts.TextStyleSpec(
+                      fontSize: 12,
+                      color: charts.MaterialPalette.black,
+                    ),
+                  ),
+                ),
+                primaryMeasureAxis: const charts.NumericAxisSpec(
+                  renderSpec: charts.GridlineRendererSpec(
+                    labelStyle: charts.TextStyleSpec(
+                      fontSize: 12,
+                      color: charts.MaterialPalette.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<charts.Series<CategorySpending, String>> _createCategoryData(Map<String, double> categorySpending) {
+    final data = categorySpending.entries.map((entry) {
+      return CategorySpending(entry.key, entry.value);
+    }).toList();
+
     return [
-      charts.Series<MapEntry<String, double>, String>(
+      charts.Series<CategorySpending, String>(
         id: 'Spending',
-        domainFn: (entry, _) => entry.key,
-        measureFn: (entry, _) => entry.value,
+        domainFn: (CategorySpending spending, _) => spending.category,
+        measureFn: (CategorySpending spending, _) => spending.amount,
         data: data,
-        labelAccessorFn: (entry, _) => '${entry.key}: \$${entry.value.toStringAsFixed(2)}',
+        colorFn: (CategorySpending spending, _) => _getCategoryColor(spending.category),
+        labelAccessorFn: (CategorySpending spending, _) =>
+        '${spending.category}: \$${spending.amount.toStringAsFixed(2)}',
       )
     ];
   }
 
-  // Create data for the bar chart
-  List<charts.Series<MapEntry<String, double>, String>> _createMonthlyData(
-      Map<String, double> monthlySpending) {
-    final data = monthlySpending.entries.toList();
+  List<charts.Series<MonthlySpending, String>> _createMonthlyData(Map<String, double> monthlySpending) {
+    final data = monthlySpending.entries.map((entry) {
+      return MonthlySpending(entry.key, entry.value);
+    }).toList();
+
     return [
-      charts.Series<MapEntry<String, double>, String>(
+      charts.Series<MonthlySpending, String>(
         id: 'Spending',
-        domainFn: (entry, _) => entry.key,
-        measureFn: (entry, _) => entry.value,
+        domainFn: (MonthlySpending spending, _) => spending.month,
+        measureFn: (MonthlySpending spending, _) => spending.amount,
         data: data,
         colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
       )
     ];
   }
-}
 
-// Pie Chart Widget
-class PieChart extends StatelessWidget {
-  final List<charts.Series<dynamic, String>> seriesList;
-
-  PieChart(this.seriesList);
-
-  @override
-  Widget build(BuildContext context) {
-    return charts.PieChart(
-      seriesList,
-      animate: true,
-      defaultRenderer: charts.ArcRendererConfig(
-        arcRendererDecorators: [
-          charts.ArcLabelDecorator(
-            labelPosition: charts.ArcLabelPosition.auto,
-          ),
-        ],
-      ),
-    );
+  // Helper method to assign colors to categories
+  charts.Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Food':
+        return charts.MaterialPalette.red.shadeDefault;
+      case 'Transport':
+        return charts.MaterialPalette.blue.shadeDefault;
+      case 'Entertainment':
+        return charts.MaterialPalette.green.shadeDefault;
+      case 'Other':
+        return charts.MaterialPalette.purple.shadeDefault;
+      default:
+        return charts.MaterialPalette.gray.shadeDefault;
+    }
   }
 }
 
-// Bar Chart Widget
-class BarChart extends StatelessWidget {
-  final List<charts.Series<dynamic, String>> seriesList;
+class CategorySpending {
+  final String category;
+  final double amount;
 
-  BarChart(this.seriesList);
+  CategorySpending(this.category, this.amount);
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return charts.BarChart(
-      seriesList,
-      animate: true,
-      domainAxis: charts.OrdinalAxisSpec(
-        renderSpec: charts.SmallTickRendererSpec(
-          labelRotation: 60,
-        ),
-      ),
-    );
-  }
+class MonthlySpending {
+  final String month;
+  final double amount;
+
+  MonthlySpending(this.month, this.amount);
 }
